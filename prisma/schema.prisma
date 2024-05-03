@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  role      Role     @default(USER)
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación con los eventos a los que el usuario está registrado
+  events    Event[]  @relation("Participant")
+  participations Participant[]
+}
+
+enum Role {
+  USER
+  ADMIN 
+}
+
+model Event {
+  id_evento   Int      @id @default(autoincrement())
+  name        String   @unique
+  date        DateTime
+  location    String
+  descripcion String
+  type        EventType  // Nuevo campo para el tipo de evento
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relación con los participantes (usuarios) del evento
+  participants User[]  @relation("Participant")
+  participations Participant[]
+
+  // Relación con la tabla de registros de participantes del evento
+  eventParticipants EventParticipant[]
+}  
+
+// Nuevo enum para el tipo de evento
+enum EventType {
+  INDIVIDUAL
+  TEAM
+}
+
+model Participant {
+  id           Int      @id @default(autoincrement())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int
+  edad         Int
+  telefono     Int
+  event        Event    @relation(fields: [eventId], references: [id_evento])
+  eventId      Int
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, eventId])
+}
+
+// Modelo para la tabla de registros de participantes del evento
+model EventParticipant {
+  id           Int      @id @default(autoincrement())
+  event        Event    @relation(fields: [eventId], references: [id_evento])
+  eventId      Int
+  // Otros campos relacionados con el registro de participantes
+  createdAt    DateTime @default(now())
+}
